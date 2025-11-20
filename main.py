@@ -6,6 +6,7 @@ from src.data_fetcher import NFLDataFetcher
 from src.analyzer import PlayerAnalyzer
 from src.team_manager import TeamManager
 from src.trade_recommender import TradeRecommender
+from src.csv_importer import CSVImporter
 
 
 class FantasyAgent:
@@ -17,6 +18,7 @@ class FantasyAgent:
         self.analyzer = PlayerAnalyzer()
         self.team_manager = TeamManager()
         self.trade_recommender = TradeRecommender()
+        self.csv_importer = CSVImporter()
 
     def print_menu(self):
         """Display main menu."""
@@ -26,6 +28,8 @@ class FantasyAgent:
         print("\n--- DATA MANAGEMENT ---")
         print("1. Refresh NFL data (pull latest player stats)")
         print("2. Quick update (current week only)")
+        print("17. Import data from CSV (players/stats)")
+        print("18. Export CSV templates")
         print("\n--- MY TEAM ---")
         print("3. View my team")
         print("4. Add player to my team")
@@ -90,6 +94,10 @@ class FantasyAgent:
                 self.upgrade_opportunities()
             elif choice == "16":
                 self.trade_recommendations()
+            elif choice == "17":
+                self.import_csv_data()
+            elif choice == "18":
+                self.export_csv_templates()
             else:
                 print("\nInvalid choice. Please try again.")
 
@@ -562,6 +570,52 @@ class FantasyAgent:
                 print(f"   Avg: {tradeable['avg_points']:.2f} pts, Value: {tradeable['value']:.2f}")
         else:
             print("No players recommended to trade away.")
+
+    def import_csv_data(self):
+        """Import player data or stats from CSV files."""
+        print("\n--- IMPORT DATA FROM CSV ---")
+        print("1. Import players")
+        print("2. Import stats")
+        print("0. Cancel")
+
+        choice = input("\nSelect import type: ").strip()
+
+        if choice == "1":
+            filepath = input("Enter path to players CSV file: ").strip()
+            if filepath:
+                count = self.csv_importer.import_players_csv(filepath)
+                if count > 0:
+                    print(f"\n✓ Successfully imported {count} players!")
+                else:
+                    print("\n✗ No players were imported. Check the file format.")
+
+        elif choice == "2":
+            filepath = input("Enter path to stats CSV file: ").strip()
+            if filepath:
+                week = input("Week number (press Enter to use value from CSV): ").strip()
+                season = input("Season year (press Enter to use value from CSV): ").strip()
+
+                week = int(week) if week else None
+                season = int(season) if season else None
+
+                count = self.csv_importer.import_stats_csv(filepath, week, season)
+                if count > 0:
+                    print(f"\n✓ Successfully imported {count} stat records!")
+                else:
+                    print("\n✗ No stats were imported. Check the file format.")
+
+    def export_csv_templates(self):
+        """Export CSV template files."""
+        print("\n--- EXPORT CSV TEMPLATES ---")
+        print("Creating template files...")
+
+        self.csv_importer.export_players_template("players_template.csv")
+        self.csv_importer.export_stats_template("stats_template.csv")
+
+        print("\n✓ Templates created:")
+        print("  - players_template.csv")
+        print("  - stats_template.csv")
+        print("\nEdit these files with your data, then use Option 17 to import.")
 
 
 def main():

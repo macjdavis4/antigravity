@@ -37,21 +37,40 @@ class NFLDataFetcher:
         """Fetch all NFL players from Sleeper API."""
         try:
             url = f"{config.SLEEPER_API_BASE}/players/nfl"
-            print("Fetching player data from Sleeper API...")
+            print(f"Fetching player data from Sleeper API...")
+            print(f"URL: {url}")
             response = self.session.get(url, timeout=30)
+            print(f"Response status: {response.status_code}")
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            print(f"✓ Successfully fetched {len(data)} players")
+            return data
+        except requests.exceptions.ProxyError as e:
+            print(f"✗ Proxy/Network error: Cannot reach Sleeper API")
+            print(f"  This may be due to network restrictions or firewall settings")
+            print(f"  Consider using CSV import instead (see documentation)")
+            return {}
+        except requests.exceptions.RequestException as e:
+            print(f"✗ Network error fetching players: {type(e).__name__}")
+            print(f"  Details: {str(e)[:100]}")
+            return {}
         except Exception as e:
-            print(f"Error fetching players from Sleeper: {e}")
+            print(f"✗ Unexpected error fetching players: {e}")
             return {}
 
     def update_player_database(self):
         """Update the local database with latest player information."""
-        print("Updating player database...")
+        print("\n" + "=" * 60)
+        print("UPDATING PLAYER DATABASE")
+        print("=" * 60)
         players_data = self.fetch_players_from_sleeper()
 
         if not players_data:
-            print("No player data received.")
+            print("\n✗ No player data received from API.")
+            print("  Options:")
+            print("  1. Check your internet connection")
+            print("  2. Try again later")
+            print("  3. Use CSV import feature (Option 17 in main menu)")
             return
 
         count = 0
@@ -73,7 +92,11 @@ class NFLDataFetcher:
             self.db.upsert_player(player_id, name, team, position)
             count += 1
 
-        print(f"Updated {count} players in database.")
+        if count > 0:
+            print(f"\n✓ Successfully updated {count} players in database.")
+        else:
+            print(f"\n✗ No players were added to database.")
+        print("=" * 60)
 
     def calculate_fantasy_points(self, stats: Dict, scoring: str = "PPR") -> float:
         """Calculate fantasy points based on stats and scoring format."""
@@ -132,11 +155,24 @@ class NFLDataFetcher:
             # Sleeper stats endpoint
             url = f"{config.SLEEPER_API_BASE}/stats/nfl/regular/{season}/{week}"
             print(f"Fetching stats for Week {week}, Season {season}...")
+            print(f"URL: {url}")
             response = self.session.get(url, timeout=15)
+            print(f"Response status: {response.status_code}")
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            print(f"✓ Successfully fetched stats for {len(data)} players")
+            return data
+        except requests.exceptions.ProxyError as e:
+            print(f"✗ Proxy/Network error: Cannot reach Sleeper API")
+            print(f"  This may be due to network restrictions or firewall settings")
+            print(f"  Consider using CSV import instead (see documentation)")
+            return {}
+        except requests.exceptions.RequestException as e:
+            print(f"✗ Network error fetching stats: {type(e).__name__}")
+            print(f"  Details: {str(e)[:100]}")
+            return {}
         except Exception as e:
-            print(f"Error fetching stats from Sleeper: {e}")
+            print(f"✗ Unexpected error fetching stats: {e}")
             return {}
 
     def update_weekly_stats(self, week: int = None):
@@ -144,11 +180,18 @@ class NFLDataFetcher:
         if week is None:
             week = self.get_current_week()
 
-        print(f"Updating stats for week {week}...")
+        print(f"\n" + "=" * 60)
+        print(f"UPDATING STATS FOR WEEK {week}")
+        print("=" * 60)
         stats_data = self.fetch_sleeper_stats(week)
 
         if not stats_data:
-            print("No stats data received.")
+            print("\n✗ No stats data received from API.")
+            print("  This could mean:")
+            print("  1. Network/proxy is blocking the request")
+            print("  2. The week hasn't been played yet")
+            print("  3. API is temporarily unavailable")
+            print("\n  Consider using CSV import for stats (see documentation)")
             return
 
         count = 0
@@ -178,7 +221,11 @@ class NFLDataFetcher:
             self.db.upsert_player_stats(player_id, week, self.current_season, stats_dict)
             count += 1
 
-        print(f"Updated stats for {count} players.")
+        if count > 0:
+            print(f"\n✓ Successfully updated stats for {count} players.")
+        else:
+            print(f"\n✗ No stats were added to database.")
+        print("=" * 60)
 
     def update_all_recent_weeks(self, num_weeks: int = 4):
         """Update stats for the last N weeks."""
