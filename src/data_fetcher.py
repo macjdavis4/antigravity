@@ -100,31 +100,14 @@ class NFLDataFetcher:
 
     def calculate_fantasy_points(self, stats: Dict, scoring: str = "PPR") -> float:
         """Calculate fantasy points based on stats and scoring format."""
-        points = 0.0
-
-        # Passing stats
-        points += stats.get('passing_yards', 0) * 0.04  # 1 point per 25 yards
-        points += stats.get('passing_tds', 0) * 4
-        points -= stats.get('interceptions', 0) * 2
-
-        # Rushing stats
-        points += stats.get('rushing_yards', 0) * 0.1  # 1 point per 10 yards
-        points += stats.get('rushing_tds', 0) * 6
-
-        # Receiving stats
-        points += stats.get('receiving_yards', 0) * 0.1  # 1 point per 10 yards
-        points += stats.get('receiving_tds', 0) * 6
-
-        # PPR bonus
+        # Sleeper API already provides calculated fantasy points
+        # Use the appropriate scoring format
         if scoring == "PPR":
-            points += stats.get('receptions', 0) * 1.0
+            return stats.get('pts_ppr', 0.0)
         elif scoring == "Half-PPR":
-            points += stats.get('receptions', 0) * 0.5
-
-        # Fumbles
-        points -= stats.get('fumbles', 0) * 2
-
-        return round(points, 2)
+            return stats.get('pts_half_ppr', 0.0)
+        else:  # Standard
+            return stats.get('pts_std', 0.0)
 
     def fetch_player_stats_espn(self, week: int = None) -> List[Dict]:
         """Fetch player stats from ESPN for a specific week."""
